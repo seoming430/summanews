@@ -1,0 +1,63 @@
+// ✅ Summanews 자동 뉴스 요약 데모 (프론트엔드용 JS + HTML)
+// 이 코드는 실제 뉴스 API나 요약 API와 연결된 백엔드 서버가 있다는 전제하에 동작합니다.
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>SummaNews 요약 데모</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 2rem;
+      background: #f9f9f9;
+    }
+    .card {
+      background: white;
+      border-radius: 8px;
+      padding: 1rem;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .title { font-weight: bold; font-size: 1.2rem; margin-bottom: 0.5rem; }
+    .summary { color: #333; }
+  </style>
+</head>
+<body>
+
+<h1>📌 SummaNews 자동 요약 데모</h1>
+<div id="news-container">뉴스를 불러오는 중입니다...</div>
+
+<script>
+const API_ENDPOINT = 'https://your-backend.example.com/api/latest-news'; // 👉 백엔드 주소로 변경 필요
+
+async function fetchAndRenderNews() {
+  const container = document.getElementById('news-container');
+  try {
+    const response = await fetch(API_ENDPOINT);
+    const data = await response.json();
+
+    container.innerHTML = '';
+
+    data.forEach(news => {
+      const card = document.createElement('div');
+      card.className = 'card';
+
+      card.innerHTML = `
+        <div class="title">📰 ${news.title}</div>
+        <div class="summary">${news.summary}</div>
+      `;
+
+      container.appendChild(card);
+    });
+  } catch (err) {
+    container.innerHTML = '<p>뉴스를 불러오지 못했습니다.</p>';
+    console.error(err);
+  }
+}
+
+fetchAndRenderNews();
+</script>
+
+</body>
+</html>
