@@ -1,63 +1,165 @@
-// ✅ Summanews 자동 뉴스 요약 데모 (프론트엔드용 JS + HTML)
-// 이 코드는 실제 뉴스 API나 요약 API와 연결된 백엔드 서버가 있다는 전제하에 동작합니다.
-
 <!DOCTYPE html>
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <title>SummaNews 요약 데모</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SummaNews 챗봇</title>
   <style>
     body {
-      font-family: sans-serif;
-      padding: 2rem;
-      background: #f9f9f9;
+      font-family: "Segoe UI", sans-serif;
+      background-color: #f4f6f9;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
     }
-    .card {
+    .chatbox {
+      flex: 1;
+      max-width: 700px;
+      margin: 0 auto;
       background: white;
-      border-radius: 8px;
-      padding: 1rem;
-      margin-bottom: 1.5rem;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      border-radius: 12px 12px 0 0;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      padding: 20px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
     }
-    .title { font-weight: bold; font-size: 1.2rem; margin-bottom: 0.5rem; }
-    .summary { color: #333; }
+    .chat-bubble {
+      background-color: #eef1f7;
+      padding: 12px 16px;
+      border-radius: 16px;
+      margin: 10px 0;
+      max-width: 85%;
+      word-break: break-word;
+    }
+    .chat-bubble.user {
+      background-color: #d9efff;
+      align-self: flex-end;
+      text-align: right;
+    }
+    .chat-bubble.bot {
+      background-color: #f0f0f0;
+      align-self: flex-start;
+    }
+    .buttons {
+      position: sticky;
+      bottom: 0;
+      background: #ffffff;
+      border-top: 1px solid #ddd;
+      padding: 10px 20px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+      max-width: 700px;
+      margin: 0 auto;
+    }
+    .buttons button {
+      flex: 1 1 30%;
+      background: #1976d2;
+      color: white;
+      padding: 10px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: background 0.2s;
+    }
+    .buttons button:hover {
+      background: #1565c0;
+    }
+    .news-link {
+      font-weight: bold;
+      color: #1a0dab;
+      text-decoration: none;
+    }
+    .news-link:hover {
+      text-decoration: underline;
+    }
   </style>
 </head>
 <body>
+  <div class="chatbox" id="chat">
+    <h2>📰 SummaNews 챗봇</h2>
+    <div class="chat-bubble bot">원하는 뉴스 분야를 선택하거나, 최신 뉴스를 요약해보세요!</div>
+  </div>
 
-<h1>📌 SummaNews 자동 요약 데모</h1>
-<div id="news-container">뉴스를 불러오는 중입니다...</div>
+  <div class="buttons">
+    <button onclick="fetchCategory('정치')">정치</button>
+    <button onclick="fetchCategory('연예')">연예</button>
+    <button onclick="fetchCategory('생활-문화')">생활/문화</button>
+    <button onclick="fetchCategory('경제')">경제</button>
+    <button onclick="fetchCategory('건강')">건강</button>
+    <button onclick="fetchCategory('세계')">세계</button>
+    <button onclick="fetchCategory('스포츠')">스포츠</button>
+    <button onclick="fetchCategory('환경')">환경</button>
+    <button onclick="fetchLatestRandom()">🧠 최신 뉴스 요약해줘</button>
+  </div>
 
-<script>
-const API_ENDPOINT = 'https://your-backend.example.com/api/latest-news'; // 👉 백엔드 주소로 변경 필요
+  <script>
+    const chat = document.getElementById('chat');
+    const categoryOffset = {};  // 카테고리별 offset 저장
+    let latestRandomPage = 0;
 
-async function fetchAndRenderNews() {
-  const container = document.getElementById('news-container');
-  try {
-    const response = await fetch(API_ENDPOINT);
-    const data = await response.json();
+    function appendBubble(content, sender = 'bot') {
+      const bubble = document.createElement('div');
+      bubble.className = `chat-bubble ${sender}`;
+      bubble.innerHTML = content;
+      chat.appendChild(bubble);
+      chat.scrollTop = chat.scrollHeight;
+    }
 
-    container.innerHTML = '';
+    function sanitizeHTML(text) {
+      const div = document.createElement('div');
+      div.innerHTML = text;
+      return div.textContent || div.innerText || '';
+    }
 
-    data.forEach(news => {
-      const card = document.createElement('div');
-      card.className = 'card';
+    function fetchCategory(displayCategory) {
+      appendBubble(`[${displayCategory}] 카테고리를 선택했어요!`, 'user');
+      const apiCategory = displayCategory.replace('/', '-');
+      categoryOffset[apiCategory] = (categoryOffset[apiCategory] || 0);
+      fetch(`http://127.0.0.1:8000/api/news/${encodeURIComponent(apiCategory)}?offset=${categoryOffset[apiCategory]}`)
+        .then(res => res.json())
+        .then(data => {
+          if (!data.news || data.news.length === 0) {
+            appendBubble(`❗ ${displayCategory} 분야의 뉴스를 더 이상 불러올 수 없습니다.`);
+            return;
+          }
+          data.news.forEach(n => {
+            const cleanSummary = sanitizeHTML(n.summary);
+            const link = n.link || '#';
+            appendBubble(`🗞️ <a href="${link}" target="_blank" class="news-link">${sanitizeHTML(n.title)}</a><br><br>${cleanSummary}`);
+          });
+          categoryOffset[apiCategory] += 3;
+        })
+        .catch(err => {
+          appendBubble(`🚫 오류 발생: ${err}`);
+        });
+    }
 
-      card.innerHTML = `
-        <div class="title">📰 ${news.title}</div>
-        <div class="summary">${news.summary}</div>
-      `;
-
-      container.appendChild(card);
-    });
-  } catch (err) {
-    container.innerHTML = '<p>뉴스를 불러오지 못했습니다.</p>';
-    console.error(err);
-  }
-}
-
-fetchAndRenderNews();
-</script>
-
+    function fetchLatestRandom() {
+      appendBubble(`최신 뉴스 5개를 무작위로 요약해볼게요!`, 'user');
+      fetch(`http://127.0.0.1:8000/api/news/latest?offset=${latestRandomPage * 5}`)
+        .then(res => res.json())
+        .then(data => {
+          if (!data.news || data.news.length === 0) {
+            appendBubble(`❗ 더 이상 가져올 뉴스가 없습니다.`);
+            return;
+          }
+          data.news.forEach(n => {
+            const cleanSummary = sanitizeHTML(n.summary);
+            const link = n.link || '#';
+            appendBubble(`📌 <a href="${link}" target="_blank" class="news-link">${sanitizeHTML(n.title)}</a><br><br>${cleanSummary}`);
+          });
+          latestRandomPage++;
+        })
+        .catch(err => {
+          appendBubble(`🚫 오류 발생: ${err}`);
+        });
+    }
+  </script>
 </body>
 </html>
