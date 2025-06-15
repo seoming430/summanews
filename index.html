@@ -103,6 +103,8 @@
     const categoryOffset = {};  // 카테고리별 offset 저장
     let latestRandomPage = 0;
 
+  const BACKEND_BASE_URL = "https://summanews-backend.onrender.com";
+
     function appendBubble(content, sender = 'bot') {
       const bubble = document.createElement('div');
       bubble.className = `chat-bubble ${sender}`;
