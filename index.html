@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>SummaNews 챗봇</title>
   <style>
     body {
@@ -100,10 +100,10 @@
 
   <script>
     const chat = document.getElementById('chat');
-    const categoryOffset = {};  // 카테고리별 offset 저장
+    const categoryOffset = {};
     let latestRandomPage = 0;
 
-  const BACKEND_BASE_URL = "https://summanews-backend.onrender.com";
+    const BACKEND_BASE_URL = "https://summanews-backend.onrender.com";
 
     function appendBubble(content, sender = 'bot') {
       const bubble = document.createElement('div');
@@ -122,8 +122,8 @@
     function fetchCategory(displayCategory) {
       appendBubble(`[${displayCategory}] 카테고리를 선택했어요!`, 'user');
       const apiCategory = displayCategory.replace('/', '-');
-      categoryOffset[apiCategory] = (categoryOffset[apiCategory] || 0);
-      fetch(`http://127.0.0.1:8000/api/news/${encodeURIComponent(apiCategory)}?offset=${categoryOffset[apiCategory]}`)
+      categoryOffset[apiCategory] = categoryOffset[apiCategory] || 0;
+      fetch(`${BACKEND_BASE_URL}/api/news/${encodeURIComponent(apiCategory)}?offset=${categoryOffset[apiCategory]}`)
         .then(res => res.json())
         .then(data => {
           if (!data.news || data.news.length === 0) {
@@ -144,7 +144,7 @@
 
     function fetchLatestRandom() {
       appendBubble(`최신 뉴스 5개를 무작위로 요약해볼게요!`, 'user');
-      fetch(`http://127.0.0.1:8000/api/news/latest?offset=${latestRandomPage * 5}`)
+      fetch(`${BACKEND_BASE_URL}/api/news/latest?offset=${latestRandomPage * 5}`)
         .then(res => res.json())
         .then(data => {
           if (!data.news || data.news.length === 0) {
