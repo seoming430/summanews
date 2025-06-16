@@ -1,3 +1,4 @@
+<!-- ✅ SummaNews 프론트엔드 index.html (이론상 정상작동) -->
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -123,6 +124,7 @@
       appendBubble(`[${displayCategory}] 카테고리를 선택했어요!`, 'user');
       const apiCategory = displayCategory.replace('/', '-');
       categoryOffset[apiCategory] = categoryOffset[apiCategory] || 0;
+
       fetch(`${BACKEND_BASE_URL}/api/news/${encodeURIComponent(apiCategory)}?offset=${categoryOffset[apiCategory]}`)
         .then(res => res.json())
         .then(data => {
