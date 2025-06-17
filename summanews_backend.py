@@ -2,6 +2,7 @@ from fastapi import FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
 import feedparser
 from summa.summarizer import summarize
+from transformers import pipeline
 import re
 
 app = FastAPI()
@@ -31,32 +32,27 @@ CATEGORY_RSS = {
 
 # ✅ 전처리 함수: 기자명 및 언론사 제거
 def clean_news_content(text: str) -> str:
-    # (서울=연합뉴스) 형식 제거
     text = re.sub(r'\([^)]*=\s*연합뉴스\)', '', text)
-    # 이름 + 기자 + =, ., :, 공백 등 제거
     text = re.sub(r'[\w가-힣]{2,5}\s*기자[\s=:.·-]*', '', text)
-    # 기자 = 단독 제거
     text = re.sub(r'기자\s*=', '', text)
-    # 언론사 단독 제거
     text = re.sub(r'(연합뉴스|뉴스1|뉴시스|KBS|MBC|SBS|JTBC)[\s·:=-]*', '', text)
-    # 공백 정리
     text = re.sub(r'\s+', ' ', text).strip()
     return text
 
+# ✅ Hugging Face 요약기 초기화
+summarizer = pipeline("summarization", model="facebook/bart-large-cnn")
+
 # ✅ 뉴스 요약 생성 함수
 def get_summary(text: str) -> str:
-    print("🧪 원문:", text[:200])  # 추가
     cleaned = clean_news_content(text)
-    print("🧼 정제 후:", cleaned[:200])  # 추가
     try:
-        summary = summarize(cleaned, ratio=0.3)
-        if not summary.strip():
-            raise ValueError("요약 실패")
-        return summary.strip()
-    except:
+        if len(cleaned.split()) < 50:
+            return cleaned[:200] + "..."
+        result = summarizer(cleaned[:1024], max_length=150, min_length=30, do_sample=False)
+        return result[0]['summary_text'].strip()
+    except Exception as e:
         fallback = clean_news_content(text.strip().split('\n')[0])[:100]
         return "[원문 발췌] " + fallback + "..."
-
 
 # ✅ 최신 뉴스 (5개씩)
 @app.get("/api/news/latest")
